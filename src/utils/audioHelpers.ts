@@ -114,9 +114,10 @@ export class AudioProcessor {
   clearPlaybackBuffer(): void {
     // Stop all scheduled audio
     if (this.audioContext) {
-      this.audioContext.close().then(() => {
-        this.audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
-      });
+      // Close and recreate audio context to stop all playing audio
+      const oldContext = this.audioContext;
+      oldContext.close().catch(err => console.warn('Error closing audio context:', err));
+      this.audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
     }
     this.audioQueue = [];
     console.log('🗑️ Playback buffer cleared');
