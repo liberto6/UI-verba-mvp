@@ -1,7 +1,7 @@
 // API Configuration and Client for Verba Backend
 
-const API_BASE_URL = https://j33itoywcyver3-8000.proxy.runpod.net;
-const WS_BASE_URL = wss://j33itoywcyver3-8000.proxy.runpod.net;
+const API_BASE_URL = 'https://j33itoywcyver3-8000.proxy.runpod.net';
+const WS_BASE_URL = 'wss://j33itoywcyver3-8000.proxy.runpod.net';
 
 export interface VoiceOption {
   id: string;
