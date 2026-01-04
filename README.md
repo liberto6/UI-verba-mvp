@@ -35,7 +35,7 @@ Este frontend se conecta a un backend de FastAPI que maneja:
 - Node.js 18+
 - Backend running (ver [testing-mvp-sesame](../testing-mvp-sesame))
 
-### Instalación
+### 💻 Desarrollo Local
 
 ```bash
 # Instalar dependencias
@@ -50,19 +50,37 @@ npm run dev
 
 El frontend estará disponible en `http://localhost:5173`
 
-### Iniciar Frontend y Backend juntos
+### 🔥 Inicio Automático (Local)
 
 ```bash
-# Ejecutar script de desarrollo completo
+# Ejecutar script de desarrollo completo (backend + frontend)
 npm run dev:full
 ```
 
 Este script inicia automáticamente tanto el backend como el frontend.
 
+### ☁️ RunPod / Cloud Deployment
+
+Para desplegar en RunPod u otros servicios cloud:
+
+```bash
+# Opción 1: Todo en uno (RECOMENDADO)
+./startup-all.sh
+
+# Opción 2: Solo este proyecto
+./startup.sh          # Setup y verificación
+./startup.sh --start  # Setup + inicio automático
+```
+
+Ver guía completa: [RUNPOD_QUICKSTART.md](RUNPOD_QUICKSTART.md)
+
 ## 📖 Documentación
 
-- [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) - Guía completa de integración frontend-backend
-- Ver también: Backend [README](../testing-mvp-sesame/README.md)
+- **[RUNPOD_QUICKSTART.md](RUNPOD_QUICKSTART.md)** - ⚡ Quick start para RunPod (3 pasos)
+- **[RUNPOD_DEPLOYMENT.md](RUNPOD_DEPLOYMENT.md)** - Guía completa de deployment en RunPod
+- **[INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)** - Guía de integración frontend-backend
+- **[QUICK_TEST.md](QUICK_TEST.md)** - Guía de testing
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Resumen de implementación
 
 ## 🔧 Configuración
 
