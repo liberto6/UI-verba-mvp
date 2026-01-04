@@ -15,14 +15,14 @@ echo ""
 # ==========================================
 # CONFIGURATION
 # ==========================================
-BACKEND_DIR="/workspace/testing-mvp-sesame"
-FRONTEND_DIR="/workspace/UI-verba-mvp"
-
-# Use current directory if running locally
-if [ ! -d "$BACKEND_DIR" ]; then
+# Detectar si estamos en RunPod o local
+if [ -d "/workspace/testing-mvp-sesame" ]; then
+    # RunPod
+    BACKEND_DIR="/workspace/testing-mvp-sesame"
+    FRONTEND_DIR="/workspace/UI-verba-mvp"
+else
+    # Local
     BACKEND_DIR="../testing-mvp-sesame/testing-mvp-sesame"
-fi
-if [ ! -d "$FRONTEND_DIR" ]; then
     FRONTEND_DIR="."
 fi
 
@@ -64,14 +64,48 @@ fi
 
 cd "$BACKEND_DIR"
 
-# Run backend startup script
-if [ -f "startup.sh" ]; then
-    chmod +x startup.sh
-    ./startup.sh
-else
-    echo "❌ ERROR: startup.sh not found in backend directory"
+# Check if startup.sh exists, if not create it
+if [ ! -f "startup.sh" ]; then
+    echo "⚠️  startup.sh not found in backend, creating it..."
+    cat > startup.sh << 'BACKEND_STARTUP'
+#!/bin/bash
+set -e
+echo "🚀 Setting up Backend..."
+echo "📦 Installing system dependencies..."
+apt-get update -qq
+apt-get install -y -qq portaudio19-dev ffmpeg curl git > /dev/null 2>&1
+echo "✅ System dependencies installed"
+
+echo "🐍 Installing Python dependencies..."
+pip install -q -r requirements.txt
+echo "✅ Python dependencies installed"
+
+if [ ! -f ".env" ]; then
+    echo "⚠️  Creating .env template..."
+    cat > .env << 'EOF'
+GROQ_API_KEY=your_groq_api_key_here
+WHISPER_MODEL=base
+TTS_VOICE=en-US-Neural2-C
+HOST=0.0.0.0
+PORT=8000
+EOF
+    echo "❌ IMPORTANT: Set your GROQ_API_KEY in .env"
     exit 1
 fi
+
+if grep -q "your_groq_api_key_here" .env; then
+    echo "❌ ERROR: GROQ_API_KEY not configured"
+    exit 1
+fi
+
+echo "✅ Backend setup complete"
+BACKEND_STARTUP
+    chmod +x startup.sh
+fi
+
+# Run backend startup script
+chmod +x startup.sh
+./startup.sh
 
 echo ""
 echo "✅ Backend setup complete"
@@ -85,14 +119,43 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 cd "$FRONTEND_DIR"
 
-# Run frontend startup script
-if [ -f "startup.sh" ]; then
-    chmod +x startup.sh
-    ./startup.sh
+# Check if startup.sh exists, if not create it
+if [ ! -f "startup.sh" ]; then
+    echo "⚠️  startup.sh not found in frontend, creating it..."
+    cat > startup.sh << 'FRONTEND_STARTUP'
+#!/bin/bash
+set -e
+echo "🚀 Setting up Frontend..."
+
+if ! command -v node &> /dev/null; then
+    echo "📦 Installing Node.js..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt-get install -y nodejs
+    echo "✅ Node.js installed"
 else
-    echo "❌ ERROR: startup.sh not found in frontend directory"
-    exit 1
+    echo "✅ Node.js already installed ($(node --version))"
 fi
+
+echo "📦 Installing npm dependencies..."
+npm install
+echo "✅ npm dependencies installed"
+
+if [ ! -f ".env" ]; then
+    cat > .env << 'EOF'
+VITE_API_URL=http://localhost:8000
+VITE_WS_URL=ws://localhost:8000
+EOF
+    echo "✅ .env created with localhost URLs"
+fi
+
+echo "✅ Frontend setup complete"
+FRONTEND_STARTUP
+    chmod +x startup.sh
+fi
+
+# Run frontend startup script
+chmod +x startup.sh
+./startup.sh
 
 echo ""
 echo "✅ Frontend setup complete"
