@@ -189,6 +189,7 @@ export function useVoiceConversation(): UseVoiceConversationReturn {
       audioProcessorRef.current.startCapture((audioData) => {
         // Send audio to backend via WebSocket
         if (wsRef.current?.readyState === WebSocket.OPEN) {
+          console.log('📤 Sending audio data:', audioData);
           wsRef.current.send(audioData.buffer);
         }
       });
