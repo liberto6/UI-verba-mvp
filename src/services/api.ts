@@ -1,7 +1,7 @@
 // API Configuration and Client for Verba Backend
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://j33itoywcyver3-5173.proxy.runpod.net';
-const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'wss://j33itoywcyver3-8000.proxy.runpod.net/ws';
+const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'wss://j33itoywcyver3-8000.proxy.runpod.net';
 
 export interface VoiceOption {
   id: string;
@@ -45,7 +45,7 @@ class VerbaAPIClient {
    * Get WebSocket URL for audio streaming
    */
   getWebSocketUrl(): string {
-    return `${this.wsBaseUrl}/ws`;
+    return 'wss://j33itoywcyver3-8000.proxy.runpod.net/ws';
   }
 
   /**
