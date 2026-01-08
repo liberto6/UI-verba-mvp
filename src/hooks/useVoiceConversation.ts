@@ -41,7 +41,7 @@ export function useVoiceConversation(): UseVoiceConversationReturn {
         const wsUrl = apiClient.getWebSocketUrl();
         console.log('🔌 Connecting to WebSocket:', wsUrl);
 
-        const ws = new WebSocket('wss://fbwy26588fnem1-8000.proxy.runpod.net/ws');
+        const ws = new WebSocket(wsUrl);
         ws.binaryType = 'arraybuffer';
 
         ws.onopen = () => {
