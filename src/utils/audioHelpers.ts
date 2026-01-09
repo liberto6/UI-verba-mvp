@@ -5,11 +5,13 @@ const BUFFER_SIZE = 4096;
 
 export class AudioProcessor {
   private audioContext: AudioContext | null = null;
+  private playbackContext: AudioContext | null = null;
   private mediaStream: MediaStream | null = null;
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private processorNode: ScriptProcessorNode | null = null;
   private audioQueue: Int16Array[] = [];
   private isPlaying = false;
+  private currentSources: AudioBufferSourceNode[] = [];
 
   /**
    * Initialize audio capture from microphone
@@ -81,8 +83,8 @@ export class AudioProcessor {
    * Play audio data received from backend
    */
   async playAudio(audioData: ArrayBuffer): Promise<void> {
-    if (!this.audioContext) {
-      this.audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
+    if (!this.playbackContext) {
+      this.playbackContext = new AudioContext({ sampleRate: SAMPLE_RATE });
     }
 
     try {
@@ -91,7 +93,7 @@ export class AudioProcessor {
       const float32Array = this.int16ToFloat32(int16Array);
 
       // Create audio buffer
-      const audioBuffer = this.audioContext.createBuffer(
+      const audioBuffer = this.playbackContext.createBuffer(
         1,
         float32Array.length,
         SAMPLE_RATE
@@ -99,9 +101,21 @@ export class AudioProcessor {
       audioBuffer.getChannelData(0).set(float32Array);
 
       // Create source and play
-      const source = this.audioContext.createBufferSource();
+      const source = this.playbackContext.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(this.audioContext.destination);
+      source.connect(this.playbackContext.destination);
+
+      // Track source for interruption
+      this.currentSources.push(source);
+
+      // Remove from tracking when finished
+      source.onended = () => {
+        const index = this.currentSources.indexOf(source);
+        if (index > -1) {
+          this.currentSources.splice(index, 1);
+        }
+      };
+
       source.start(0);
     } catch (error) {
       console.error('Error playing audio:', error);
@@ -109,18 +123,28 @@ export class AudioProcessor {
   }
 
   /**
-   * Clear audio playback buffer
+   * Clear audio playback buffer (for interruptions)
    */
   clearPlaybackBuffer(): void {
-    // Stop all scheduled audio
-    if (this.audioContext) {
-      // Close and recreate audio context to stop all playing audio
-      const oldContext = this.audioContext;
-      oldContext.close().catch(err => console.warn('Error closing audio context:', err));
-      this.audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
+    // Stop all currently playing audio sources
+    this.currentSources.forEach(source => {
+      try {
+        source.stop();
+      } catch (err) {
+        // Source may have already ended, ignore
+      }
+    });
+    this.currentSources = [];
+
+    // Close and recreate playback context to ensure clean state
+    if (this.playbackContext) {
+      const oldContext = this.playbackContext;
+      oldContext.close().catch(err => console.warn('Error closing playback context:', err));
+      this.playbackContext = new AudioContext({ sampleRate: SAMPLE_RATE });
     }
+
     this.audioQueue = [];
-    console.log('🗑️ Playback buffer cleared');
+    console.log('🗑️ Playback buffer cleared - microphone still active');
   }
 
   /**
@@ -128,6 +152,16 @@ export class AudioProcessor {
    */
   cleanup(): void {
     this.stopCapture();
+
+    // Stop all playing audio
+    this.currentSources.forEach(source => {
+      try {
+        source.stop();
+      } catch (err) {
+        // Source may have already ended, ignore
+      }
+    });
+    this.currentSources = [];
 
     if (this.mediaStream) {
       this.mediaStream.getTracks().forEach(track => track.stop());
@@ -137,6 +171,11 @@ export class AudioProcessor {
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
+    }
+
+    if (this.playbackContext) {
+      this.playbackContext.close();
+      this.playbackContext = null;
     }
 
     console.log('🧹 Audio processor cleaned up');

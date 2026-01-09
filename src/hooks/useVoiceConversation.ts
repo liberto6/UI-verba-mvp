@@ -103,8 +103,11 @@ export function useVoiceConversation(): UseVoiceConversationReturn {
     switch (message.type) {
       case 'CLEAR_BUFFER':
         // Backend requests to clear audio buffer (interruption)
+        console.log('🛑 Interruption detected - clearing playback buffer');
         audioProcessorRef.current?.clearPlaybackBuffer();
         setState('listening');
+        // Clear any pending transcript from interrupted response
+        currentTranscriptRef.current = '';
         break;
 
       case 'TRANSCRIPT':
@@ -112,6 +115,8 @@ export function useVoiceConversation(): UseVoiceConversationReturn {
         if (message.text && message.text.trim()) {
           currentTranscriptRef.current = message.text;
           addMessage('user', message.text);
+          // Ensure we're in processing state after transcript
+          setState('processing');
         }
         break;
 
