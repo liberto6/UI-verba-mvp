@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:full": "./dev-start.sh",
+    "check:backend": "curl -f http://localhost:8000 || echo 'Backend not running. Start it with: cd ../testing-mvp-sesame/testing-mvp-sesame && python server.py'"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
