@@ -71,7 +71,9 @@ const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
     } else {
       setMouthOpen(false);
     }
-    return () => interval && clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isSpeaking]);
 
   return (
