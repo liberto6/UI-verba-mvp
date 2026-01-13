@@ -25,7 +25,7 @@ const Waveform = ({ active }: { active: boolean }) => {
           key={i}
           className={`w-1.5 bg-indigo-500 rounded-full transition-all duration-150 ${active ? 'animate-pulse' : ''}`}
           style={{
-            height: active ? `${Math.random() * 24 + 12}px` : '4px',
+            height: active ? `${12 + i * 3}px` : '4px',
             animationDelay: `${i * 0.1}s`,
           }}
         />
@@ -35,30 +35,25 @@ const Waveform = ({ active }: { active: boolean }) => {
 };
 
 const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
+  const [mouthOpen, setMouthOpen] = useState(false);
+  useEffect(() => {
+    let interval: number | undefined;
+    if (isSpeaking) {
+      interval = window.setInterval(() => {
+        setMouthOpen(prev => !prev);
+      }, 200);
+    } else {
+      setMouthOpen(false);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isSpeaking]);
+  const src = isSpeaking ? (mouthOpen ? '/avatar-boca-abierta.png' : '/avatar-boca-cerrada.png') : '/avatar-boca-cerrada.png';
   return (
-    <div className="relative w-48 h-48 md:w-64 md:h-64 flex flex-col items-center justify-center">
+    <div className="relative w-56 h-56 md:w-72 md:h-72 flex flex-col items-center justify-center">
       <div className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 opacity-70' : 'scale-100 opacity-40'}`}></div>
-
-      <svg viewBox="0 0 200 200" className="w-full h-full relative z-10 drop-shadow-xl">
-        <path d="M50,80 Q100,20 150,80 L150,140 Q100,160 50,140 Z" fill="#4A3B32" />
-        <ellipse cx="100" cy="100" rx="45" ry="55" fill="#FFDFC4" />
-        <circle cx="85" cy="90" r="4" fill="#333" />
-        <circle cx="115" cy="90" r="4" fill="#333" />
-        <g stroke="#333" strokeWidth="2" fill="none">
-           <circle cx="85" cy="90" r="12" />
-           <circle cx="115" cy="90" r="12" />
-           <line x1="97" y1="90" x2="103" y2="90" />
-        </g>
-        <ellipse
-          cx="100"
-          cy="125"
-          rx={isSpeaking ? "10" : "8"}
-          ry={isSpeaking ? "6" : "2"}
-          fill="#D66D6D"
-          className={`transition-all duration-150 ${isSpeaking ? 'animate-pulse' : ''}`}
-        />
-        <path d="M55,150 Q100,180 145,150 L145,200 L55,200 Z" fill="#6366F1" />
-      </svg>
+      <img src={src} alt="Avatar" className="w-full h-full relative z-10 object-contain drop-shadow-xl" />
     </div>
   );
 };
@@ -102,10 +97,11 @@ export default function ConversationPage() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(true);
   const [isVoiceMenuOpen, setIsVoiceMenuOpen] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState({ id: 'v1', name: 'Sarah (US)' });
+  const [selectedVoice, setSelectedVoice] = useState({ id: 'v1', name: 'Ashley (US)' });
+  const [logoError, setLogoError] = useState(false);
 
   const voices = [
-    { id: 'v1', name: 'Sarah (US)' },
+    { id: 'v1', name: 'Ashley (US)' },
     { id: 'v2', name: 'Matteo (UK)' },
     { id: 'v3', name: 'Emma (AU)' },
     { id: 'v4', name: 'Hiro (JP)' },
@@ -190,8 +186,17 @@ export default function ConversationPage() {
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">V</div>
-            <span className="text-xl font-bold text-indigo-900 tracking-tight">Verba</span>
+            {logoError ? (
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">EC</div>
+            ) : (
+              <img
+                src="/perfil.jpg"
+                alt="English Connection"
+                className="w-14 h-14 rounded-lg object-contain bg-white"
+                onError={() => setLogoError(true)}
+              />
+            )}
+            <span className="text-xl font-bold text-indigo-900 tracking-tight">English Connection</span>
           </div>
 
           <button
@@ -298,12 +303,12 @@ export default function ConversationPage() {
           )}
 
           {/* Avatar Area */}
-          <div className="flex-1 flex flex-col items-center justify-center relative">
+          <div className="flex-1 flex flex-col items-center justify-center relative pt-6 md:pt-8">
             <Avatar isSpeaking={isAISpeaking} />
 
             <div className="mt-8 text-center h-8">
                {isAISpeaking ? (
-                 <p className="text-indigo-600 font-medium animate-pulse">Verba is speaking...</p>
+                 <p className="text-indigo-600 font-medium animate-pulse">English Connection is speaking...</p>
                ) : isListening ? (
                  <p className="text-red-500 font-medium animate-pulse">Listening...</p>
                ) : conversationState === 'processing' ? (
@@ -317,8 +322,8 @@ export default function ConversationPage() {
           </div>
 
           {/* Controls Area */}
-          <div className="pb-10 pt-4 flex flex-col items-center justify-center gap-6 bg-gradient-to-t from-white via-white to-transparent">
-             <div className="h-12 w-full flex justify-center">
+          <div className="pb-6  flex flex-col items-center justify-center gap-4 bg-gradient-to-t from-white via-white to-transparent">
+             <div className="h-8 w-full flex justify-center">
                 <Waveform active={isListening || isAISpeaking} />
              </div>
 
@@ -346,7 +351,7 @@ export default function ConversationPage() {
                )}
              </button>
 
-             <p className="text-xs text-gray-400 font-medium mt-2">
+             <p className="text-xs text-gray-400 font-medium mb-2">
                {getStatusMessage()}
              </p>
           </div>

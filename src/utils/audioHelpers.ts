@@ -9,8 +9,6 @@ export class AudioProcessor {
   private mediaStream: MediaStream | null = null;
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private processorNode: ScriptProcessorNode | null = null;
-  private audioQueue: Int16Array[] = [];
-  private isPlaying = false;
   private currentSources: AudioBufferSourceNode[] = [];
 
   /**
@@ -143,7 +141,6 @@ export class AudioProcessor {
       this.playbackContext = new AudioContext({ sampleRate: SAMPLE_RATE });
     }
 
-    this.audioQueue = [];
     console.log('🗑️ Playback buffer cleared - microphone still active');
   }
 

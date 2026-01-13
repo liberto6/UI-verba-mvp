@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@theme {
+  --color-indigo-50: #F2F5F9;
+  --color-indigo-100: #E6EBF2;
+  --color-indigo-200: #C9D3E1;
+  --color-indigo-300: #A3B5CA;
+  --color-indigo-400: #7C96B2;
+  --color-indigo-500: #58789A;
+  --color-indigo-600: #2F415D;
+  --color-indigo-700: #26354B;
+  --color-indigo-800: #1E2A3C;
+  --color-indigo-900: #171F2C;
+}

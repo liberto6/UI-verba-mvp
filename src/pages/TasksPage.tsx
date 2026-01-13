@@ -8,6 +8,7 @@ import { TaskCard } from '../components/TaskCard';
 export default function TasksPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<TaskStatus | 'all'>('all');
+  const [logoError, setLogoError] = useState(false);
 
   // NOTE: In a real app, we would fetch tasks here:
   // useEffect(() => {
@@ -27,6 +28,16 @@ export default function TasksPage() {
       <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
            <div className="flex items-center gap-3">
+              {logoError ? (
+                <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-semibold">EC</div>
+              ) : (
+                <img
+                  src="/perfil.jpg"
+                  alt="English Connection"
+                  className="w-14 h-14 rounded-lg object-contain bg-white"
+                  onError={() => setLogoError(true)}
+                />
+              )}
               <div>
                 <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                   <BookOpen className="text-indigo-600" size={24} />

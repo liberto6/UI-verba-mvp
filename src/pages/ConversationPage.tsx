@@ -49,7 +49,7 @@ const Waveform = ({ active }: { active: boolean }) => {
           key={i}
           className={`w-1.5 bg-indigo-500 rounded-full transition-all duration-150 ${active ? 'animate-pulse' : ''}`}
           style={{
-            height: active ? `${Math.random() * 24 + 12}px` : '4px',
+            height: active ? `${12 + i * 3}px` : '4px',
             animationDelay: `${i * 0.1}s`,
           }}
         />
@@ -60,38 +60,25 @@ const Waveform = ({ active }: { active: boolean }) => {
 
 // Avatar Component
 const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
+  const [mouthOpen, setMouthOpen] = useState(false);
+  useEffect(() => {
+    let interval: number | undefined;
+    if (isSpeaking) {
+      interval = window.setInterval(() => {
+        setMouthOpen(prev => !prev);
+      }, 200);
+    } else {
+      setMouthOpen(false);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isSpeaking]);
+  const src = isSpeaking ? (mouthOpen ? '/avatar-boca-abierta.png' : '/avatar-boca-cerrada.png') : '/avatar-boca-cerrada.png';
   return (
-    <div className="relative w-48 h-48 md:w-64 md:h-64 flex flex-col items-center justify-center">
-      {/* Background/Aura */}
+    <div className="relative w-56 h-56 md:w-72 md:h-72 flex flex-col items-center justify-center">
       <div className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 opacity-70' : 'scale-100 opacity-40'}`}></div>
-      
-      {/* Avatar SVG */}
-      <svg viewBox="0 0 200 200" className="w-full h-full relative z-10 drop-shadow-xl">
-        {/* Hair */}
-        <path d="M50,80 Q100,20 150,80 L150,140 Q100,160 50,140 Z" fill="#4A3B32" />
-        {/* Face */}
-        <ellipse cx="100" cy="100" rx="45" ry="55" fill="#FFDFC4" />
-        {/* Eyes */}
-        <circle cx="85" cy="90" r="4" fill="#333" />
-        <circle cx="115" cy="90" r="4" fill="#333" />
-        {/* Glasses (Teacher look) */}
-        <g stroke="#333" strokeWidth="2" fill="none">
-           <circle cx="85" cy="90" r="12" />
-           <circle cx="115" cy="90" r="12" />
-           <line x1="97" y1="90" x2="103" y2="90" />
-        </g>
-        {/* Mouth - Animating */}
-        <ellipse 
-          cx="100" 
-          cy="125" 
-          rx={isSpeaking ? "10" : "8"} 
-          ry={isSpeaking ? "6" : "2"} 
-          fill="#D66D6D" 
-          className={`transition-all duration-150 ${isSpeaking ? 'animate-pulse' : ''}`}
-        />
-        {/* Body */}
-        <path d="M55,150 Q100,180 145,150 L145,200 L55,200 Z" fill="#6366F1" />
-      </svg>
+      <img src={src} alt="Avatar" className="w-full h-full relative z-10 object-contain drop-shadow-xl" />
     </div>
   );
 };
@@ -143,6 +130,7 @@ export default function ConversationPage() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const turnCount = useRef(0);
   const isClassActiveRef = useRef(false); // To access fresh state in timeouts
+  const messageIdRef = useRef(0);
 
   // Sync ref with state
   useEffect(() => {
@@ -217,7 +205,7 @@ export default function ConversationPage() {
     // Add User Message
     const userText = MOCK_USER_RESPONSES[turnCount.current % MOCK_USER_RESPONSES.length];
     const newUserMsg: Message = {
-      id: `user-${Date.now()}`,
+      id: `user-${++messageIdRef.current}`,
       sender: 'user',
       text: userText,
     };
@@ -233,7 +221,7 @@ export default function ConversationPage() {
         if (!isClassActiveRef.current) return;
         const aiText = MOCK_AI_RESPONSES[turnCount.current % MOCK_AI_RESPONSES.length];
         const newAIMsg: Message = {
-          id: `ai-${Date.now()}`,
+          id: `ai-${++messageIdRef.current}`,
           sender: 'ai',
           text: aiText,
         };
