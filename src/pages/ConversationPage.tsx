@@ -77,17 +77,19 @@ const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
   return (
     <div className="relative w-56 h-56 md:w-72 md:h-72 flex flex-col items-center justify-center">
       <div className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 opacity-70' : 'scale-100 opacity-40'}`}></div>
-      {/* Preload both images and toggle opacity to prevent layout shifts/flicker */}
-      <img 
-        src="/avatar-boca-cerrada.png" 
-        alt="Avatar Closed" 
-        className={`absolute inset-0 w-full h-full z-10 object-contain object-bottom drop-shadow-xl ${isSpeaking && mouthOpen ? 'opacity-0' : 'opacity-100'}`} 
-      />
-      <img 
-        src="/avatar-boca-abierta.png" 
-        alt="Avatar Open" 
-        className={`absolute inset-0 w-full h-full z-10 object-contain object-bottom drop-shadow-xl ${isSpeaking && mouthOpen ? 'opacity-100' : 'opacity-0'}`} 
-      />
+      {/* Preload both images and toggle opacity. Using absolute positioning with transform to center horizontally regardless of image width differences */}
+      <div className="relative w-full h-full z-10">
+        <img 
+          src="/avatar-boca-cerrada.png" 
+          alt="Avatar Closed" 
+          className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-full w-auto max-w-none drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-0' : 'opacity-100'}`} 
+        />
+        <img 
+          src="/avatar-boca-abierta.png" 
+          alt="Avatar Open" 
+          className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-full w-auto max-w-none drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-100' : 'opacity-0'}`} 
+        />
+      </div>
     </div>
   );
 };
