@@ -77,19 +77,12 @@ const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
   return (
     <div className="relative w-56 h-56 md:w-72 md:h-72 flex flex-col items-center justify-center">
       <div className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 opacity-70' : 'scale-100 opacity-40'}`}></div>
-      {/* Preload both images. Keep closed avatar always visible as base to prevent flickering. Open avatar overlays it. */}
-      <div className="relative w-full h-full z-10">
-        <img 
-          src="/avatar_closed.png?v=2" 
-          alt="Avatar Closed" 
-          className="absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl" 
-        />
-        <img 
-          src="/avatar_open.png?v=2" 
-          alt="Avatar Open" 
-          className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl transition-opacity duration-75 ${isSpeaking && mouthOpen ? 'opacity-100' : 'opacity-0'}`} 
-        />
-      </div>
+      {/* Single image toggle as requested */}
+      <img 
+        src={isSpeaking && mouthOpen ? '/avatar_open.png' : '/avatar_closed.png'} 
+        alt="Avatar" 
+        className="w-full h-full relative z-10 object-contain object-bottom drop-shadow-xl transition-all duration-150" 
+      />
     </div>
   );
 };
