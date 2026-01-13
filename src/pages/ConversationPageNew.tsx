@@ -52,19 +52,17 @@ const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
   return (
     <div className="relative w-56 h-56 md:w-72 md:h-72 flex flex-col items-center justify-center">
       <div className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 opacity-70' : 'scale-100 opacity-40'}`}></div>
-      {/* Preload both images and toggle opacity. Using absolute positioning with transform to center horizontally regardless of image width differences */}
+      {/* Preload both images and toggle opacity. Images are now pre-aligned/scaled by user. */}
       <div className="relative w-full h-full z-10">
         <img 
-          src="/avatar-boca-cerrada.png" 
+          src="/avatar_closed.png" 
           alt="Avatar Closed" 
-          className={`absolute bottom-0 left-1/2 h-full w-auto max-w-none drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-0' : 'opacity-100'}`} 
-          style={{ transform: 'translateX(-50%)' }}
+          className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-0' : 'opacity-100'}`} 
         />
         <img 
-          src="/avatar-boca-abierta.png" 
+          src="/avatar_open.png" 
           alt="Avatar Open" 
-          className={`absolute bottom-0 left-1/2 h-full w-auto max-w-none drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-100' : 'opacity-0'}`} 
-          style={{ transform: 'translateX(-50%) scale(0.85)', transformOrigin: 'bottom center' }}
+          className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-100' : 'opacity-0'}`} 
         />
       </div>
     </div>
