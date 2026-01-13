@@ -61,27 +61,27 @@ const Waveform = ({ active }: { active: boolean }) => {
 // Avatar Component
 const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
   const [mouthOpen, setMouthOpen] = useState(false);
+
   useEffect(() => {
     let interval: number | undefined;
     if (isSpeaking) {
       interval = window.setInterval(() => {
         setMouthOpen(prev => !prev);
-      }, 200);
+      }, 300);
     } else {
       setMouthOpen(false);
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => interval && clearInterval(interval);
   }, [isSpeaking]);
+
   return (
-    <div className="relative w-56 h-56 md:w-72 md:h-72 flex flex-col items-center justify-center">
-      <div className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 opacity-70' : 'scale-100 opacity-40'}`}></div>
-      {/* Single image toggle as requested */}
-      <img 
-        src={isSpeaking && mouthOpen ? '/avatar_open.png' : '/avatar_closed.png'} 
-        alt="Avatar" 
-        className="w-full h-full relative z-10 object-contain object-bottom drop-shadow-xl transition-all duration-150" 
+    <div className="relative w-56 h-56 md:w-72 md:h-72 flex items-center justify-center">
+      <div className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 opacity-70' : 'opacity-40'}`} />
+
+      <img
+        src={isSpeaking && mouthOpen ? '/avatar_open.png' : '/avatar_closed.png'}
+        alt="Avatar"
+        className="relative z-10 w-full h-full object-contain object-bottom drop-shadow-xl transition-all duration-150"
       />
     </div>
   );
