@@ -57,12 +57,14 @@ const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
         <img 
           src="/avatar-boca-cerrada.png" 
           alt="Avatar Closed" 
-          className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-full w-auto max-w-none drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-0' : 'opacity-100'}`} 
+          className={`absolute bottom-0 left-1/2 h-full w-auto max-w-none drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-0' : 'opacity-100'}`} 
+          style={{ transform: 'translateX(-50%)' }}
         />
         <img 
           src="/avatar-boca-abierta.png" 
           alt="Avatar Open" 
-          className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-full w-auto max-w-none drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-100' : 'opacity-0'}`} 
+          className={`absolute bottom-0 left-1/2 h-full w-auto max-w-none drop-shadow-xl transition-opacity duration-100 ${isSpeaking && mouthOpen ? 'opacity-100' : 'opacity-0'}`} 
+          style={{ transform: 'translateX(-50%) scale(0.85)', transformOrigin: 'bottom center' }}
         />
       </div>
     </div>
