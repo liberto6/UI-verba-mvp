@@ -33,19 +33,8 @@ const Waveform = ({ active }: { active: boolean }) => {
     </div>
   );
 };
-const AVATARS = {
-  Ashley: {
-    closed: '/avatars/ashley_closed.png',
-    open: '/avatars/ashley_open.png',
-  },
-  Alex: {
-    closed: '/avatars/alex_closed.png',
-    open: '/avatars/alex_open.png',
-  },
-} as const;
 
-
-const Avatar = ({ isSpeaking, voiceId }: AvatarProps) => {
+const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
   const [mouthOpen, setMouthOpen] = useState(false);
 
   useEffect(() => {
@@ -62,22 +51,21 @@ const Avatar = ({ isSpeaking, voiceId }: AvatarProps) => {
     return () => interval && clearInterval(interval);
   }, [isSpeaking]);
 
-  const avatar = AVATARS[voiceId];
-
   return (
     <div className="relative w-56 h-56 md:w-72 md:h-72 flex items-center justify-center">
-      {/* Glow */}
+      {/* Fondo glow (opcional, estable) */}
       <div
         className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl ${
           isSpeaking ? 'scale-110 opacity-70' : 'opacity-40'
         }`}
       />
 
+      {/* Contenedor fijo */}
       <div className="relative z-10 w-full h-full">
         {/* Boca cerrada */}
         <img
-          src={avatar.closed}
-          alt={`${voiceId} avatar closed`}
+          src="/avatar_closed.png"
+          alt="Avatar closed"
           className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl ${
             mouthOpen ? 'hidden' : 'block'
           }`}
@@ -85,9 +73,9 @@ const Avatar = ({ isSpeaking, voiceId }: AvatarProps) => {
 
         {/* Boca abierta */}
         <img
-          src={avatar.open}
-          alt={`${voiceId} avatar open`}
-          className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl ${
+          src="/avatar_open.png"
+          alt="Avatar open"
+          className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl mb-1 ml-0.5 ${
             mouthOpen ? 'block' : 'hidden'
           }`}
         />
@@ -95,7 +83,6 @@ const Avatar = ({ isSpeaking, voiceId }: AvatarProps) => {
     </div>
   );
 };
-
 
 const FeedbackBar = ({ label, value, tag, colorClass }: { label: string, value: number, tag: string, colorClass: string }) => (
   <div className="mb-3">
