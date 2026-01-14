@@ -23,7 +23,7 @@ class VerbaAPIClient {
    */
   async setVoice(voiceId: string): Promise<{ status: string; message: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/set_voice`, {
+      const response = await fetch(`${this.baseUrl}/set_voice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
