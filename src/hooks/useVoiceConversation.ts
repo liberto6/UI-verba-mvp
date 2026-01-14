@@ -30,6 +30,7 @@ export function useVoiceConversation(): UseVoiceConversationReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const audioProcessorRef = useRef<AudioProcessor | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
+  const currentVoiceIdRef = useRef<string | null>(null);
   const currentTranscriptRef = useRef<string>('');
 
   /**
@@ -50,6 +51,13 @@ export function useVoiceConversation(): UseVoiceConversationReturn {
           setState('listening');
           setError(null);
           wsRef.current = ws;
+          if (currentVoiceIdRef.current) {
+            const controlMessage = {
+              type: 'SET_VOICE',
+              voice_id: currentVoiceIdRef.current,
+            };
+            ws.send(JSON.stringify(controlMessage));
+          }
           resolve();
         };
 
@@ -248,12 +256,19 @@ export function useVoiceConversation(): UseVoiceConversationReturn {
    * Set TTS voice
    */
   const setVoice = useCallback(async (voiceId: string): Promise<void> => {
-    try {
-      await apiClient.setVoice(voiceId);
-      console.log('✅ Voice set to:', voiceId);
-    } catch (err) {
-      console.error('Error setting voice:', err);
-      setError('Failed to change voice');
+    currentVoiceIdRef.current = voiceId;
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      const controlMessage = {
+        type: 'SET_VOICE',
+        voice_id: voiceId,
+      };
+      try {
+        wsRef.current.send(JSON.stringify(controlMessage));
+        console.log('✅ Voice set to:', voiceId);
+      } catch (err) {
+        console.error('Error sending SET_VOICE message:', err);
+        setError('Failed to change voice');
+      }
     }
   }, []);
 
