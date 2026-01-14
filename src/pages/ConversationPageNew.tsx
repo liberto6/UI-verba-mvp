@@ -342,10 +342,12 @@ export default function ConversationPage() {
 
           <div className="flex-1 flex flex-col items-center justify-center relative pt-6 md:pt-8">
             <Avatar
+              key={selectedVoice.id}
               isSpeaking={isAISpeaking}
               closedSrc={currentAvatarConfig.closed}
               openSrc={currentAvatarConfig.open}
             />
+
 
             <div className="mt-8 text-center h-8">
                {isAISpeaking ? (
