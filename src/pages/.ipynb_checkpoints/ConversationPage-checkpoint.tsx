@@ -1,22 +1,46 @@
-import { useEffect, useRef, useState } from 'react';
-import { Settings, Mic, MicOff, ChevronDown, Award, BookOpen, Volume2, Check, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Settings, Mic, MicOff, ChevronDown, Award, BookOpen, Volume2, Check } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Task } from '../data/mockTasks';
-import { useVoiceConversation } from '../hooks/useVoiceConversation';
 
-// --- Types ---
+// --- Types & Mock Data ---
+
+type Message = {
+  id: string;
+  sender: 'ai' | 'user';
+  text: string;
+};
 
 type Feedback = {
-  fluency: number;
-  pronunciation: number;
-  vocabulary: number;
+  fluency: number; // 0-100
+  pronunciation: number; // 0-100
+  vocabulary: number; // 0-100
   fluencyLabel: string;
   pronunciationLabel: string;
   vocabularyLabel: string;
 };
 
+const MOCK_USER_RESPONSES = [
+  "My favorite hobby is photography. I love capturing moments in nature.",
+  "I also enjoy hiking on weekends. It helps me clear my mind.",
+  "Recently, I started learning to cook Italian food.",
+];
+
+const MOCK_AI_RESPONSES = [
+  "That sounds wonderful! Photography is a great way to express creativity. Do you prefer digital or film?",
+  "Hiking is fantastic for health. Where is your favorite trail?",
+  "Italian cuisine is delicious! What is your favorite dish to make?",
+];
+
+const INITIAL_MESSAGE: Message = {
+  id: 'init-1',
+  sender: 'ai',
+  text: "Let’s begin! Can you tell me about your favorite hobby?",
+};
+
 // --- Helper Components ---
 
+// Simple simulated waveform
 const Waveform = ({ active }: { active: boolean }) => {
   return (
     <div className={`flex items-center justify-center space-x-1 h-12 ${active ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
@@ -34,12 +58,12 @@ const Waveform = ({ active }: { active: boolean }) => {
   );
 };
 
+// Avatar Component
 const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
   const [mouthOpen, setMouthOpen] = useState(false);
 
   useEffect(() => {
     let interval: number | undefined;
-
     if (isSpeaking) {
       interval = window.setInterval(() => {
         setMouthOpen(prev => !prev);
@@ -47,43 +71,25 @@ const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
     } else {
       setMouthOpen(false);
     }
-
-    return () => interval && clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isSpeaking]);
 
   return (
     <div className="relative w-56 h-56 md:w-72 md:h-72 flex items-center justify-center">
-      {/* Fondo glow (opcional, estable) */}
-      <div
-        className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl ${
-          isSpeaking ? 'scale-110 opacity-70' : 'opacity-40'
-        }`}
+      <div className={`absolute inset-0 bg-indigo-100 rounded-full blur-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 opacity-70' : 'opacity-40'}`} />
+
+      <img
+        src={isSpeaking && mouthOpen ? '/avatar_open.png' : '/avatar_closed.png'}
+        alt="Avatar"
+        className="relative z-10 w-full h-full object-contain object-bottom drop-shadow-xl transition-all duration-150"
       />
-
-      {/* Contenedor fijo */}
-      <div className="relative z-10 w-full h-full">
-        {/* Boca cerrada */}
-        <img
-          src="/avatar_closed.png"
-          alt="Avatar closed"
-          className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl ${
-            mouthOpen ? 'hidden' : 'block'
-          }`}
-        />
-
-        {/* Boca abierta */}
-        <img
-          src="/avatar_open.png"
-          alt="Avatar open"
-          className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl mb-1 ml-0.5 ${
-            mouthOpen ? 'block' : 'hidden'
-          }`}
-        />
-      </div>
     </div>
   );
 };
 
+// Feedback Bar
 const FeedbackBar = ({ label, value, tag, colorClass }: { label: string, value: number, tag: string, colorClass: string }) => (
   <div className="mb-3">
     <div className="flex justify-between text-sm mb-1">
@@ -91,8 +97,8 @@ const FeedbackBar = ({ label, value, tag, colorClass }: { label: string, value: 
       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${colorClass.replace('bg-', 'bg-opacity-20 text-')}`}>{tag}</span>
     </div>
     <div className="w-full bg-gray-200 rounded-full h-2.5">
-      <div
-        className={`h-2.5 rounded-full ${colorClass} transition-all duration-1000 ease-out`}
+      <div 
+        className={`h-2.5 rounded-full ${colorClass} transition-all duration-1000 ease-out`} 
         style={{ width: `${value}%` }}
       ></div>
     </div>
@@ -106,35 +112,47 @@ export default function ConversationPage() {
   const location = useLocation();
   const currentTask = location.state?.task as Task | undefined;
 
-  // Use the voice conversation hook
-  const {
-    state: conversationState,
-    messages,
-    error: connectionError,
-    isConnected,
-    startConversation,
-    stopConversation,
-    setVoice,
-  } = useVoiceConversation();
-
-  // UI State
+  // State
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isAISpeaking, setIsAISpeaking] = useState(false);
+  const [isClassActive, setIsClassActive] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
-  const [feedback] = useState<Feedback | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(true);
-  const [isVoiceMenuOpen, setIsVoiceMenuOpen] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState({ id: 'v1', name: 'Ashley (US)' });
-  const [logoError, setLogoError] = useState(false);
 
+  // Voice Selection State
+  const [isVoiceMenuOpen, setIsVoiceMenuOpen] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState({ id: 'v1', name: 'Sarah (US)' });
   const voices = [
-    { id: 'v1', name: 'Ashley (US)' },
+    { id: 'v1', name: 'Sarah (US)' },
     { id: 'v2', name: 'Matteo (UK)' },
     { id: 'v3', name: 'Emma (AU)' },
     { id: 'v4', name: 'Hiro (JP)' },
   ];
-
+  
+  // Refs for scroll and logic
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const sessionStartRef = useRef<number | null>(null);
+  const turnCount = useRef(0);
+  const isClassActiveRef = useRef(false); // To access fresh state in timeouts
+  const messageIdRef = useRef(0);
+
+  // Sync ref with state
+  useEffect(() => {
+    isClassActiveRef.current = isClassActive;
+  }, [isClassActive]);
+
+  // Initialize with task-specific message if available
+  useEffect(() => {
+    if (currentTask) {
+       setMessages([{
+         id: 'init-task',
+         sender: 'ai',
+         text: `Today we’ll practice talking about: ${currentTask.topic}. Let’s begin!`
+       }]);
+    }
+  }, [currentTask]);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -146,86 +164,117 @@ export default function ConversationPage() {
   // Session Timer
   useEffect(() => {
     let timer: number | undefined;
-    if (conversationState !== 'disconnected' && conversationState !== 'error') {
-      if (!sessionStartRef.current) {
-        sessionStartRef.current = Date.now();
-      }
+    if (isClassActive) {
       timer = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - (sessionStartRef.current || 0)) / 1000);
-        setSessionTime(elapsed);
+        setSessionTime(prev => prev + 1);
       }, 1000);
-    } else {
-      sessionStartRef.current = null;
     }
     return () => clearInterval(timer);
-  }, [conversationState]);
+  }, [isClassActive]);
 
+  // Format time
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const toggleConversation = async () => {
-    if (conversationState === 'disconnected' || conversationState === 'error') {
-      await startConversation();
+  // Handle Microphone Interaction
+  const toggleClass = () => {
+    if (isClassActive) {
+      // Stop Class
+      setIsClassActive(false);
+      setIsRecording(false);
+      setIsAISpeaking(false);
     } else {
-      stopConversation();
-      setSessionTime(0);
+      // Start Class
+      setIsClassActive(true);
+      startUserTurn();
     }
   };
 
-  const handleVoiceChange = async (voice: { id: string; name: string }) => {
-    setSelectedVoice(voice);
-    setIsVoiceMenuOpen(false);
-    await setVoice(voice.id);
+  const startUserTurn = () => {
+    if (!isClassActiveRef.current) return;
+    
+    setIsRecording(true);
+    // Simulate User Speaking duration (3-4s)
+    setTimeout(() => {
+      if (!isClassActiveRef.current) return;
+      setIsRecording(false);
+      handleUserTurnComplete();
+    }, 3500);
   };
 
-  const isClassActive = conversationState !== 'disconnected' && conversationState !== 'error';
-  const isAISpeaking = conversationState === 'speaking';
-  const isListening = conversationState === 'listening';
+  const handleUserTurnComplete = () => {
+    if (!isClassActiveRef.current) return;
 
-  // Get status message
-  const getStatusMessage = () => {
-    switch (conversationState) {
-      case 'connecting':
-        return 'Conectando...';
-      case 'listening':
-        return 'Escuchando...';
-      case 'processing':
-        return 'Procesando...';
-      case 'speaking':
-        return 'Verba está hablando...';
-      case 'error':
-        return 'Error de conexión';
-      case 'disconnected':
-        return 'Presiona para iniciar la práctica';
-      default:
-        return '';
-    }
+    // Add User Message
+    const userText = MOCK_USER_RESPONSES[turnCount.current % MOCK_USER_RESPONSES.length];
+    const newUserMsg: Message = {
+      id: `user-${++messageIdRef.current}`,
+      sender: 'user',
+      text: userText,
+    };
+    setMessages(prev => [...prev, newUserMsg]);
+
+    // Trigger AI processing/speaking
+    setTimeout(() => {
+      if (!isClassActiveRef.current) return;
+      setIsAISpeaking(true);
+      
+      // AI "Thinking" delay
+      setTimeout(() => {
+        if (!isClassActiveRef.current) return;
+        const aiText = MOCK_AI_RESPONSES[turnCount.current % MOCK_AI_RESPONSES.length];
+        const newAIMsg: Message = {
+          id: `ai-${++messageIdRef.current}`,
+          sender: 'ai',
+          text: aiText,
+        };
+        setMessages(prev => [...prev, newAIMsg]);
+        
+        // Generate Mock Feedback
+        setFeedback({
+          fluency: 85 + Math.random() * 10,
+          pronunciation: 70 + Math.random() * 20,
+          vocabulary: 90,
+          fluencyLabel: 'Good',
+          pronunciationLabel: Math.random() > 0.5 ? 'Good' : 'Needs Work',
+          vocabularyLabel: 'Excellent',
+        });
+
+        // Stop AI Speaking after "reading" the text
+        setTimeout(() => {
+          if (!isClassActiveRef.current) return;
+          setIsAISpeaking(false);
+          turnCount.current += 1;
+          
+          // Loop back to user turn if class is still active
+          setTimeout(() => {
+            if (isClassActiveRef.current) {
+              startUserTurn();
+            }
+          }, 500);
+          
+        }, 3000); 
+
+      }, 1000); // Thinking time
+    }, 500); // Slight pause after user stops
   };
 
   return (
     <div className="h-screen overflow-hidden bg-gray-50 flex flex-col font-sans text-gray-900">
-
-      {/* Top Bar */}
+      
+      {/* 1. Top Bar */}
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            {logoError ? (
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">EC</div>
-            ) : (
-              <img
-                src="/perfil.jpg"
-                alt="English Connection"
-                className="w-14 h-14 rounded-lg object-contain bg-white"
-                onError={() => setLogoError(true)}
-              />
-            )}
-            <span className="text-xl font-bold text-indigo-900 tracking-tight">English Connection</span>
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">V</div>
+            <span className="text-xl font-bold text-indigo-900 tracking-tight">Verba</span>
           </div>
-
-          <button
+          
+          {/* My Tasks Button */}
+          <button 
             onClick={() => navigate('/')}
             className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-sm font-medium transition-colors"
           >
@@ -235,24 +284,9 @@ export default function ConversationPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Connection Status */}
-          <div className="flex items-center gap-2 text-sm">
-            {isConnected ? (
-              <>
-                <Wifi size={16} className="text-green-500" />
-                <span className="text-green-600 font-medium">Connected</span>
-              </>
-            ) : (
-              <>
-                <WifiOff size={16} className="text-gray-400" />
-                <span className="text-gray-400">Disconnected</span>
-              </>
-            )}
-          </div>
-
-          {/* Voice Selector */}
+          {/* Voice Selector (Replaces Level Selector) */}
           <div className="relative">
-            <button
+            <button 
               onClick={() => setIsVoiceMenuOpen(!isVoiceMenuOpen)}
               className="hidden md:flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-200 transition"
             >
@@ -261,6 +295,7 @@ export default function ConversationPage() {
               <ChevronDown size={14} className={`transition-transform ${isVoiceMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
+            {/* Dropdown Menu */}
             {isVoiceMenuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setIsVoiceMenuOpen(false)}></div>
@@ -268,7 +303,10 @@ export default function ConversationPage() {
                    {voices.map((voice) => (
                      <button
                        key={voice.id}
-                       onClick={() => handleVoiceChange(voice)}
+                       onClick={() => {
+                         setSelectedVoice(voice);
+                         setIsVoiceMenuOpen(false);
+                       }}
                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between group"
                      >
                        <span className={`${selectedVoice.id === voice.id ? 'font-bold text-indigo-700' : 'text-gray-700'}`}>
@@ -291,16 +329,16 @@ export default function ConversationPage() {
         </div>
       </header>
 
-      {/* Main Layout */}
+      {/* 2. Main Layout */}
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-64px)] overflow-hidden">
-
-        {/* Left Column: Avatar Interaction */}
+        
+        {/* Left Column: Avatar Interaction (60%) */}
         <section className="lg:col-span-7 bg-white rounded-3xl shadow-lg border border-gray-100 flex flex-col relative overflow-hidden">
-
+          
           {/* Session Info Overlay */}
           <div className="absolute top-6 left-6 flex items-center gap-3 z-20">
              <div className="bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-600 border border-gray-200 flex items-center gap-2 shadow-sm">
-               <span className={`w-2 h-2 rounded-full ${isClassActive ? 'bg-red-500 animate-pulse' : 'bg-gray-400'}`}></span>
+               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                {formatTime(sessionTime)}
              </div>
              {currentTask ? (
@@ -315,32 +353,15 @@ export default function ConversationPage() {
              )}
           </div>
 
-          {/* Error Alert */}
-          {connectionError && (
-            <div className="absolute top-20 left-6 right-6 z-20">
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3">
-                <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-red-800">Connection Error</p>
-                  <p className="text-xs text-red-600 mt-1">{connectionError}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Avatar Area */}
-          <div className="flex-1 flex flex-col items-center justify-center relative pt-6 md:pt-8">
+          <div className="flex-1 flex flex-col items-center justify-center relative">
             <Avatar isSpeaking={isAISpeaking} />
-
+            
             <div className="mt-8 text-center h-8">
                {isAISpeaking ? (
-                 <p className="text-indigo-600 font-medium animate-pulse">English Connection is speaking...</p>
-               ) : isListening ? (
+                 <p className="text-indigo-600 font-medium animate-pulse">Verba is speaking...</p>
+               ) : isRecording ? (
                  <p className="text-red-500 font-medium animate-pulse">Listening...</p>
-               ) : conversationState === 'processing' ? (
-                 <p className="text-yellow-600 font-medium animate-pulse">Processing...</p>
-               ) : conversationState === 'connecting' ? (
-                 <p className="text-blue-600 font-medium animate-pulse">Connecting...</p>
                ) : (
                  <p className="text-gray-400 text-sm">Tap microphone to speak</p>
                )}
@@ -348,18 +369,19 @@ export default function ConversationPage() {
           </div>
 
           {/* Controls Area */}
-          <div className="pb-6  flex flex-col items-center justify-center gap-4 bg-gradient-to-t from-white via-white to-transparent">
-             <div className="h-8 w-full flex justify-center">
-                <Waveform active={isListening || isAISpeaking} />
+          <div className="pb-10 pt-4 flex flex-col items-center justify-center gap-6 bg-gradient-to-t from-white via-white to-transparent">
+             {/* Waveform */}
+             <div className="h-12 w-full flex justify-center">
+                <Waveform active={isRecording || isAISpeaking} />
              </div>
 
+             {/* Main Action Button (Start/Stop Class) */}
              <button
-               onClick={toggleConversation}
-               disabled={conversationState === 'connecting'}
+               onClick={toggleClass}
                className={`
-                 relative px-8 py-4 rounded-full font-bold text-lg shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed
+                 relative px-8 py-4 rounded-full font-bold text-lg shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center gap-3
                  ${isClassActive
-                   ? 'bg-red-500 text-white ring-4 ring-red-100'
+                   ? 'bg-red-500 text-white ring-4 ring-red-100' 
                    : 'bg-indigo-600 text-white hover:bg-indigo-700 ring-4 ring-indigo-50'
                  }
                `}
@@ -376,43 +398,43 @@ export default function ConversationPage() {
                   </>
                )}
              </button>
-
-             <p className="text-xs text-gray-400 font-medium mb-2">
-               {getStatusMessage()}
+             
+             <p className="text-xs text-gray-400 font-medium mt-2">
+               {isClassActive ? "Conversación en curso..." : "Presiona para iniciar la práctica"}
              </p>
           </div>
         </section>
 
-        {/* Right Column: Chat & Feedback */}
+        {/* Right Column: Chat & Feedback (40%) */}
         <section className="lg:col-span-5 flex flex-col gap-4 h-full overflow-hidden">
-
+          
           {/* Chat Panel */}
           <div className={`bg-white rounded-3xl shadow-md border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 ${isChatOpen ? 'flex-1' : 'flex-none'}`}>
-            <div
+            <div 
               className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition"
               onClick={() => setIsChatOpen(!isChatOpen)}
             >
               <h3 className="font-semibold text-gray-700">Transcript</h3>
               <div className="flex items-center gap-3">
-                 <span className="text-xs text-gray-500">{messages.length} messages</span>
+                 <button className="text-xs text-indigo-600 hover:underline" onClick={(e) => e.stopPropagation()}>Download</button>
                  <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isChatOpen ? 'rotate-180' : ''}`} />
               </div>
             </div>
-
-            <div
+            
+            <div 
               ref={chatContainerRef}
               className={`overflow-y-auto p-4 space-y-4 scroll-smooth transition-all duration-300 ${isChatOpen ? 'flex-1 opacity-100' : 'h-0 opacity-0 p-0'}`}
             >
               {messages.map((msg) => (
-                <div
-                  key={msg.id}
+                <div 
+                  key={msg.id} 
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div
+                  <div 
                     className={`
                       max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm
-                      ${msg.sender === 'user'
-                        ? 'bg-indigo-600 text-white rounded-br-none'
+                      ${msg.sender === 'user' 
+                        ? 'bg-indigo-600 text-white rounded-br-none' 
                         : 'bg-gray-100 text-gray-800 rounded-bl-none'
                       }
                     `}
@@ -421,19 +443,12 @@ export default function ConversationPage() {
                   </div>
                 </div>
               ))}
-
-              {isListening && (
+              
+              {/* Typing indicator */}
+              {isRecording && (
                 <div className="flex justify-end">
                    <div className="bg-indigo-50 text-indigo-400 p-3 rounded-2xl rounded-br-none text-xs italic animate-pulse">
                      Listening...
-                   </div>
-                </div>
-              )}
-
-              {conversationState === 'processing' && (
-                <div className="flex justify-start">
-                   <div className="bg-gray-100 text-gray-400 p-3 rounded-2xl rounded-bl-none text-xs italic animate-pulse">
-                     Thinking...
                    </div>
                 </div>
               )}
@@ -442,7 +457,7 @@ export default function ConversationPage() {
 
           {/* Feedback Panel */}
           <div className={`bg-white rounded-3xl shadow-md border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 ${isFeedbackOpen ? (isChatOpen ? 'h-1/3 min-h-[200px]' : 'flex-1') : 'flex-none'}`}>
-            <div
+            <div 
               className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition"
               onClick={() => setIsFeedbackOpen(!isFeedbackOpen)}
             >
@@ -456,29 +471,28 @@ export default function ConversationPage() {
             <div className={`p-5 flex flex-col transition-all duration-300 ${isFeedbackOpen ? 'flex-1 opacity-100' : 'h-0 opacity-0 p-0'}`}>
               {feedback ? (
                 <div className="flex-1 flex flex-col justify-center">
-                  <FeedbackBar
-                    label="Fluency"
-                    value={feedback.fluency}
-                    tag={feedback.fluencyLabel}
-                    colorClass="bg-green-500"
+                  <FeedbackBar 
+                    label="Fluency" 
+                    value={feedback.fluency} 
+                    tag={feedback.fluencyLabel} 
+                    colorClass="bg-green-500" 
                   />
-                  <FeedbackBar
-                    label="Pronunciation"
-                    value={feedback.pronunciation}
-                    tag={feedback.pronunciationLabel}
-                    colorClass="bg-yellow-500"
+                  <FeedbackBar 
+                    label="Pronunciation" 
+                    value={feedback.pronunciation} 
+                    tag={feedback.pronunciationLabel} 
+                    colorClass="bg-yellow-500" 
                   />
-                  <FeedbackBar
-                    label="Vocabulary"
-                    value={feedback.vocabulary}
-                    tag={feedback.vocabularyLabel}
-                    colorClass="bg-blue-500"
+                  <FeedbackBar 
+                    label="Vocabulary" 
+                    value={feedback.vocabulary} 
+                    tag={feedback.vocabularyLabel} 
+                    colorClass="bg-blue-500" 
                   />
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-gray-400 text-center">
                   <p className="text-sm">Speak to receive instant analysis on your pronunciation and grammar.</p>
-                  <p className="text-xs mt-2 text-gray-300">Coming soon!</p>
                 </div>
               )}
             </div>
