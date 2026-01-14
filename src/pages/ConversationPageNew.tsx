@@ -128,7 +128,7 @@ export default function ConversationPage() {
 
   const voices = [
     { id: 'Ashley', name: 'Ashley (US)' },
-    { id: 'Matteo', name: 'Matteo (UK)' },
+    { id: 'Alex', name: 'Alex (UK)' },
     { id: 'Emma', name: 'Emma (AU)' },
     { id: 'Hiro', name: 'Hiro (JP)' },
   ];
