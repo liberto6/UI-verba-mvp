@@ -18,7 +18,7 @@ export const MOCK_TASKS: Task[] = [
   {
     id: 't1',
     topic: 'Talking about hobbies',
-    description: 'Have a 3–5 minute conversation about your free time activities and interests.',
+    description: 'Have a 10-15 minute conversation about your free time activities and interests.',
     level: 'B1',
     status: 'pending'
   },
