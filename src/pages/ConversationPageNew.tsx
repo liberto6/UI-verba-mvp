@@ -34,7 +34,13 @@ const Waveform = ({ active }: { active: boolean }) => {
   );
 };
 
-const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
+type AvatarProps = {
+  isSpeaking: boolean;
+  closedSrc: string;
+  openSrc: string;
+};
+
+const Avatar = ({ isSpeaking, closedSrc, openSrc }: AvatarProps) => {
   const [mouthOpen, setMouthOpen] = useState(false);
 
   useEffect(() => {
@@ -62,18 +68,16 @@ const Avatar = ({ isSpeaking }: { isSpeaking: boolean }) => {
 
       {/* Contenedor fijo */}
       <div className="relative z-10 w-full h-full">
-        {/* Boca cerrada */}
         <img
-          src="/avatar_closed.png"
+          src={closedSrc}
           alt="Avatar closed"
           className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl ${
             mouthOpen ? 'hidden' : 'block'
           }`}
         />
 
-        {/* Boca abierta */}
         <img
-          src="/avatar_open.png"
+          src={openSrc}
           alt="Avatar open"
           className={`absolute inset-0 w-full h-full object-contain object-bottom drop-shadow-xl mb-1 ml-0.5 ${
             mouthOpen ? 'block' : 'hidden'
@@ -132,6 +136,14 @@ export default function ConversationPage() {
     { id: 'Emma', name: 'Emma (AU)' },
     { id: 'Hiro', name: 'Hiro (JP)' },
   ];
+
+  const avatarConfigByVoice: Record<string, { closed: string; open: string }> = {
+    Ashley: { closed: '/avatar_closed.png', open: '/avatar_open.png' },
+    Alex: { closed: '/avatar_men_closed.png', open: '/avatar_men_open.png' },
+  };
+
+  const currentAvatarConfig =
+    avatarConfigByVoice[selectedVoice.id] ?? avatarConfigByVoice.Ashley;
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const sessionStartRef = useRef<number | null>(null);
@@ -328,9 +340,12 @@ export default function ConversationPage() {
             </div>
           )}
 
-          {/* Avatar Area */}
           <div className="flex-1 flex flex-col items-center justify-center relative pt-6 md:pt-8">
-            <Avatar isSpeaking={isAISpeaking} />
+            <Avatar
+              isSpeaking={isAISpeaking}
+              closedSrc={currentAvatarConfig.closed}
+              openSrc={currentAvatarConfig.open}
+            />
 
             <div className="mt-8 text-center h-8">
                {isAISpeaking ? (
