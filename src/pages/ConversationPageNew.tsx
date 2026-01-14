@@ -123,14 +123,14 @@ export default function ConversationPage() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(true);
   const [isVoiceMenuOpen, setIsVoiceMenuOpen] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState({ id: 'v1', name: 'Ashley (US)' });
+  const [selectedVoice, setSelectedVoice] = useState({ id: 'Ashley', name: 'Ashley (US)' });
   const [logoError, setLogoError] = useState(false);
 
   const voices = [
-    { id: 'v1', name: 'Ashley (US)' },
-    { id: 'v2', name: 'Matteo (UK)' },
-    { id: 'v3', name: 'Emma (AU)' },
-    { id: 'v4', name: 'Hiro (JP)' },
+    { id: 'Ashley', name: 'Ashley (US)' },
+    { id: 'Matteo', name: 'Matteo (UK)' },
+    { id: 'Emma', name: 'Emma (AU)' },
+    { id: 'Hiro', name: 'Hiro (JP)' },
   ];
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
