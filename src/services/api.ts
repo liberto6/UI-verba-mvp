@@ -13,8 +13,9 @@ class VerbaAPIClient {
   private wsBaseUrl: string;
 
   constructor() {
-    this.baseUrl = API_BASE_URL;
-    this.wsBaseUrl = WS_BASE_URL;
+    this.baseUrl = API_BASE_URL.replace(/\/+$/, '');     // quita / finales
+    this.wsBaseUrl = WS_BASE_URL.replace(/\/+$/, '');    // quita / finales
+
   }
 
   /**
